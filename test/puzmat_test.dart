@@ -220,4 +220,41 @@ void main() {
 
     expect(puzMat[0][2][1], 8);
   });
+
+  test('Map layers', () {
+    List<List<String>> map = [
+      "O....#....",
+      "O.OO#....#",
+      ".....##...",
+      "OO.#O....O",
+      ".O.....O#.",
+      "O.#..O.#.#",
+      "..O..#O..O",
+      ".......O..",
+      "#....###..",
+      "#OO..#...."]
+      .map((l) => l.split('')).toList();
+
+      List<List<String>> mappings = [
+        ['.'],
+        ['#'],
+        ['O']
+      ];
+
+      List<String?> empty = [
+        '.',
+        ' ',
+        ' '
+      ];
+
+      var puzMat = PuzMat.mapLayers(map, mappings, empty: empty);
+
+      expect(puzMat.cols, 10);
+      expect(puzMat.rows, 10);
+      expect(puzMat.layers, 3);
+
+      expect(puzMat[0][0], ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']);
+      expect(puzMat[1][5], [' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', '#']);
+      expect(puzMat[2][6], [' ', ' ', 'O', ' ', ' ', ' ', 'O', ' ', ' ', 'O']);
+  });
 }

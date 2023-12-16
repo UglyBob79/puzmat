@@ -23,8 +23,8 @@ enum ToStringMode { all, overlay, single }
 /// arguments, allowing you to target specific layers for customized actions.
 ///
 class PuzMat<T> {
-  List<List<List<T>>> _layers = [];
-  List<T> _defVals = [];
+  List<List<List<T?>>> _layers = [];
+  List<T?> _defVals = [];
 
   // parameters used to provice various versions of toString() format
   ToStringMode _toStringMode = ToStringMode.all;
@@ -42,9 +42,11 @@ class PuzMat<T> {
 
   /// Creates a new PuzMat instance with a base layer from the provided [data] matrix.
   ///
-  /// The [data] matrix is used to initialize the new PuzMat.
-  PuzMat.fromMatrix(List<List<T>> data) {
-    _layers.add(data);
+  /// The [baseLayer] matrix is used to initialize the new PuzMat.
+  PuzMat.fromMatrix(List<List<T>> baseLayer) {
+    _layers.add(baseLayer);
+    // TODO Want to default this by type instead?
+    _defVals = [null];
   }
 
   /// Creates a new PuzMat instance with multiple layers from the provided [data] 3D matrix.
@@ -52,6 +54,49 @@ class PuzMat<T> {
   /// The [data] 3D matrix is used to initialize the new PuzMat.
   PuzMat.from3DMatrix(List<List<List<T>>> data) {
     _layers = data;
+    // TODO Want to default this by type instead?
+    _defVals = List.generate(_layers.length, (int) => null);
+  }
+
+  /// Maps layers in a PuzMat instance based on specified mappings and data.
+  ///
+  /// Given a 2D matrix of data and a list of mappings for each layer, this method
+  /// creates new layers where each element is either populated from the original
+  /// data matrix or set to a specified empty value based on the mappings.
+  ///
+  /// If the optional [empty] parameter is provided, it should be a list of values
+  /// that correspond to each mapping. Elements in the new layers not matching any
+  /// mapping will be set to the respective empty value. If [empty] is null, unmatched
+  /// elements will be set to null.
+  ///
+  /// Throws [ArgumentError] if [empty] is provided and its length is not the same as
+  /// the length of mappings.
+  PuzMat.mapLayers(List<List<T>> data, List<List<T>> mappings, { List<T?>? empty }) {
+    if (empty != null && empty.length != mappings.length) {
+      throw ArgumentError.value(empty, 'empty', 'Parameter empty must be the same length as mappings or null.');
+    }
+
+    if (empty != null) {
+      _defVals = empty;
+    } else {
+      _defVals = List.generate(mappings.length, (_) => null);
+    }
+
+    _layers = [];
+
+    for (int i = 0; i < mappings.length; i++) {
+      List<List<T?>> layer = List.generate(data.length, (row) => List.generate(data[0].length, (col) => _defVals[i]));
+
+      for (int row = 0; row < data.length; row++) {
+        for (int col = 0; col < data[0].length; col++) {
+          if (mappings[i].contains(data[row][col])) {
+            layer[row][col] = data[row][col];
+          }
+        }
+      }
+
+      _layers.add(layer);
+    }
   }
 
   /// This getter provides the count of rows in the matrix.
@@ -78,7 +123,7 @@ class PuzMat<T> {
   /// If the [row] is within the current bounds of the matrix, a list of elements in that row is returned.
   ///
   /// Returns a list representing the elements in the specified [row] of the matrix base layer.
-  List<T> row(int row) {
+  List<T?> row(int row) {
     if (row < 0 || row >= _layers[0].length) {
       throw RangeError("Invalid row index");
     }
@@ -88,8 +133,8 @@ class PuzMat<T> {
   /// If the [column] is within the current bounds of the matrix, a list of elements in that column is returned.
   ///
   /// Returns a list representing the elements in the specified [column] of the matrix base layer.
-  List<T> column(int column) {
-    List<T> list = [];
+  List<T?> column(int column) {
+    List<T?> list = [];
     for (int i = 0; i < _layers[0].length; i++) {
       list.add(_layers[0][i][column]);
     }
@@ -100,7 +145,7 @@ class PuzMat<T> {
   /// Modifying the returned matrix directly will affect the state of the PuzMat.
   ///
   /// Returns the underlying matrix of the PuzMat instance.
-  List<List<List<T>>> get matrix {
+  List<List<List<T?>>> get matrix {
     return _layers;
   }
 
@@ -132,7 +177,7 @@ class PuzMat<T> {
         _layers.map((layer) => layer.reversed.toList()).toList());
   }
 
-  List<List<T>> operator [](int layer) {
+  List<List<T?>> operator [](int layer) {
     return _layers[layer];
   }
 
@@ -163,6 +208,30 @@ class PuzMat<T> {
   /// Returns `true` if the column is within bounds; otherwise, returns `false`.
   bool columnInBounds(int column) {
     return 0 <= column && column < _layers[0][0].length;
+  }
+
+  /// Clears all layers in the PuzMat instance.
+  ///
+  /// This method iterates through each layer in the PuzMat instance
+  /// and clears its content using the [clearLayer] method.
+  void clear() {
+    for (int layer = 0; layer < _layers.length; layer++) {
+      clearLayer(layer);
+    }
+  }
+
+  /// Clears the content of a specific layer in the PuzMat instance.
+  ///
+  /// This method sets all elements in the specified layer to the default
+  /// value associated with that layer. If the default values are
+  /// not set, elements will be set to null.
+  void clearLayer(int layer) {
+    // TODO Clear by new instead? What is faster/better?
+    for (int row = 0; row < _layers[layer].length; row++) {
+      for (int col = 0; col < _layers[layer][0].length; col++) {
+        _layers[layer][row][col] = _defVals[layer];
+      }
+    }
   }
 
   /// Move any [movables] in the specified [dir].
