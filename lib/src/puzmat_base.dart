@@ -55,7 +55,7 @@ class PuzMat<T> {
   PuzMat.from3DMatrix(List<List<List<T>>> data) {
     _layers = data;
     // TODO Want to default this by type instead?
-    _defVals = List.generate(_layers.length, (int) => null);
+    _defVals = List.generate(_layers.length, (_) => null);
   }
 
   /// Maps layers in a PuzMat instance based on specified mappings and data.
@@ -284,6 +284,7 @@ class PuzMat<T> {
     _toStringLayer = layer;
   }
 
+  // TODO format cell width according to contents
   @override
   String toString() {
     StringBuffer buffer = StringBuffer();
@@ -295,8 +296,19 @@ class PuzMat<T> {
       for (int i = 0; i < _layers.length; i++) {
         buffer.write(_layerToString(i));
       }
-    } else {
-      // TODO
+    } else { // ToStringMode.overlay
+      for (int row = 0; row < _layers[0].length; row++) {
+        buffer.write('  ');
+        for (int col = 0; col < _layers[0][0].length; col++) {
+          for (int layer = _layers.length - 1; layer >= 0; layer--) {
+            if (_layers[layer][row][col] != _defVals[layer] || layer == 0) {
+              buffer.write(_layers[layer][row][col]);
+              break;
+            }
+          }
+        }
+        buffer.writeln();
+      }
     }
 
     return buffer.toString();
