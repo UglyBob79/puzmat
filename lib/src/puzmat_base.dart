@@ -52,8 +52,8 @@ class PuzMat<T> {
   /// Creates a new PuzMat instance with multiple layers from the provided [data] 3D matrix.
   ///
   /// The [data] 3D matrix is used to initialize the new PuzMat.
-  PuzMat.from3DMatrix(List<List<List<T>>> data) {
-    _layers = data;
+  PuzMat.from3DMatrix(List<List<List<T>>> matrix) {
+    _layers = matrix;
     // TODO Want to default this by type instead?
     _defVals = List.generate(_layers.length, (_) => null);
   }
@@ -71,7 +71,7 @@ class PuzMat<T> {
   ///
   /// Throws [ArgumentError] if [empty] is provided and its length is not the same as
   /// the length of mappings.
-  PuzMat.mapLayers(List<List<T>> data, List<List<T>> mappings, { List<T?>? empty }) {
+  PuzMat.mapLayers(List<List<T>> matrix, List<List<T>> mappings, { List<T?>? empty }) {
     if (empty != null && empty.length != mappings.length) {
       throw ArgumentError.value(empty, 'empty', 'Parameter empty must be the same length as mappings or null.');
     }
@@ -85,18 +85,33 @@ class PuzMat<T> {
     _layers = [];
 
     for (int i = 0; i < mappings.length; i++) {
-      List<List<T?>> layer = List.generate(data.length, (row) => List.generate(data[0].length, (col) => _defVals[i]));
+      List<List<T?>> layer = List.generate(matrix.length, (row) => List.generate(matrix[0].length, (col) => _defVals[i]));
 
-      for (int row = 0; row < data.length; row++) {
-        for (int col = 0; col < data[0].length; col++) {
-          if (mappings[i].contains(data[row][col])) {
-            layer[row][col] = data[row][col];
+      for (int row = 0; row < matrix.length; row++) {
+        for (int col = 0; col < matrix[0].length; col++) {
+          if (mappings[i].contains(matrix[row][col])) {
+            layer[row][col] = matrix[row][col];
           }
         }
       }
 
       _layers.add(layer);
     }
+  }
+
+  /// Adds a new layer to the PuzMat using a 2D matrix.
+  ///
+  /// This method adds a new layer to the private list _layers by copying the
+  /// provided 2D matrix. Additionally, it allows specifying a default value
+  /// (`empty`) to be associated with the new layer in the list _defVals.
+  ///
+  /// Parameters:
+  ///   - [matrix]: The 2D matrix representing the new layer to be added.
+  ///   - [empty]: An optional parameter representing the default value for
+  ///     elements in the new layer. If not provided, the default value is `null`.
+  void addLayerFromMatrix(List<List<T>> matrix, { T? empty }) {
+    _layers.add(matrix);
+    _defVals.add(empty);
   }
 
   /// This getter provides the count of rows in the matrix.
@@ -247,6 +262,14 @@ class PuzMat<T> {
     return 0 <= column && column < _layers[0][0].length;
   }
 
+  /// Checks if the given layer index is valid.
+  ///
+  /// This method ensures that the layer index is within the bounds of the
+  /// private list _layers in the context of the containing class.
+  bool layerValid(int layer) {
+    return layer >= 0 && layer < _layers.length;
+  }
+
   /// Clears all layers in the PuzMat instance.
   ///
   /// This method iterates through each layer in the PuzMat instance
@@ -327,6 +350,37 @@ class PuzMat<T> {
   void setToStringMode(ToStringMode mode, {layer = -1}) {
     _toStringMode = mode;
     _toStringLayer = layer;
+  }
+
+  /// Compares two layers to check if they are identical.
+  ///
+  /// This method compares the content of two layers (_layers[layer1] and
+  /// _layers[layer2]) element-wise. If the layers are identical, it returns `true`;
+  /// otherwise, it returns `false`.
+  ///
+  /// Parameters:
+  ///   - [layer1]: The index of the first layer to be compared.
+  ///   - [layer2]: The index of the second layer to be compared.
+  ///
+  /// Throws:
+  ///   - ArgumentError: If either of the layer indices is out of bounds.
+  ///
+  /// Returns:
+  ///   - `true` if the layers are identical.
+  ///   - `false` otherwise.
+  bool compareLayers(int layer1, int layer2) {
+    if (!layerValid(layer1) || !layerValid(layer2)) {
+      throw ArgumentError('Layer(s) our or bounds.');
+    }
+
+    for (int y = 0; y < _layers[layer1].length; y++) {
+      for (int x = 0; x < _layers[layer1][y].length; x++) {
+        if (_layers[layer1][y][x] != _layers[layer2][y][x]) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   // TODO format cell width according to contents
