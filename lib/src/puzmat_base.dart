@@ -124,7 +124,7 @@ class PuzMat<T> {
   ///
   /// Returns a list representing the elements in the specified [row] of the matrix base layer.
   List<T?> row(int row) {
-    if (row < 0 || row >= _layers[0].length) {
+    if (row < 0 || row >= this.rows) {
       throw RangeError("Invalid row index");
     }
     return _layers[0][row];
@@ -135,7 +135,7 @@ class PuzMat<T> {
   /// Returns a list representing the elements in the specified [column] of the matrix base layer.
   List<T?> column(int column) {
     List<T?> list = [];
-    for (int i = 0; i < _layers[0].length; i++) {
+    for (int i = 0; i < this.rows; i++) {
       list.add(_layers[0][i][column]);
     }
     return list;
@@ -154,7 +154,7 @@ class PuzMat<T> {
   /// Returns a new PuzMat representing the transpose of the current matrix.
   PuzMat get transpose {
     return PuzMat.from3DMatrix(_layers
-        .map((layer) => List.generate(layer[0].length, (colIndex) {
+        .map((layer) => List.generate(this.rows, (colIndex) {
               return layer.map((row) => row[colIndex]).toList();
             }))
         .toList());
@@ -187,6 +187,43 @@ class PuzMat<T> {
   void operator []=(int index, List<T> value) {
     // TODO
     //_data[index] = value;
+  }
+
+/// Checks if a specific element in the PuzMat instance is empty.
+///
+/// This method verifies whether the element at the specified layer, row, and
+/// column is considered empty, based on the comparison with the default value
+/// (_defVals) associated with that layer. If the provided layer, row, or column
+/// is out of range, a [RangeError] is thrown.
+///
+/// Example:
+/// ```dart
+/// final puzMat = PuzMat<int>();
+/// // ... (populate layers)
+/// if (puzMat.isEmpty(1, 2, 3)) {
+///   print('The element at layer 1, row 2, and column 3 is empty.');
+/// }
+/// ```
+///
+/// Parameters:
+/// - [layer]: The index of the layer to check.
+/// - [row]: The index of the row to check.
+/// - [col]: The index of the column to check.
+///
+/// Returns `true` if the element is empty; otherwise, returns `false`.
+///
+/// Throws a [RangeError] if the provided layer index is out of range or if the
+/// specified row or column is not inside the matrix range.
+  bool isEmpty(int layer, int row, int col) {
+    if (!inBounds(row, col)) {
+      throw RangeError("Row or col not inside matrix range.");
+    }
+
+    if (layer < 0 || layer >= this.layers) {
+      throw RangeError("Layer index out of range.");
+    }
+
+    return _layers[layer][row][col] == _defVals[layer];
   }
 
   /// Checks if the given [row] and [column] are within the bounds of the matrix.
@@ -234,48 +271,56 @@ class PuzMat<T> {
     }
   }
 
-  /// Move any [movables] in the specified [dir].
-  /// They will only move if [empty] is encountered in the given direction.
-  ///
-  /// Returns `true` if no moves occurs, i.e. it's stable; otherwise, returns `false`.
-  bool move(Dir dir, List<T> movables, T empty) {
+  bool move(Dir dir, int moveLayer, List<int> obstacleLayers) {
+    if (moveLayer < 0 || moveLayer >= this.layers) {
+      throw RangeError("Invalid move layer index");
+    }
+
+    if (obstacleLayers.any((layer) => layer < 0 || layer >= this.layers)) {
+      throw RangeError("Invalid obstacle layer indexes");
+    }
+
     bool stable = true;
 
-    // for (int i = 0; i < _data.length * _data[0].length; i++) {
-    //   int column = 0;
-    //   int row = 0;
+    for (int i = 0; i < this.rows * this.cols; i++) {
+      int col = 0;
+      int row = 0;
 
-    //   switch (dir) {
-    //     case Dir.north:
-    //       column = i % _data.length;
-    //       row = i ~/ _data.length;
-    //       break;
+      switch (dir) {
+        case Dir.north:
+          col = i % this.rows;
+          row = i ~/ this.rows;
+          break;
 
-    //     case Dir.south:
-    //       column = i % _data.length;
-    //       row = _data.length - 1 - (i ~/ _data.length);
-    //       break;
+        case Dir.south:
+          col = i % this.rows;
+          row = this.rows - 1 - (i ~/ this.rows);
+          break;
 
-    //     case Dir.west:
-    //       column = i ~/ _data[0].length;
-    //       row = i % _data[0].length;
-    //       break;
+        case Dir.west:
+          col = i ~/ this.cols;
+          row = i % this.cols;
+          break;
 
-    //     case Dir.east:
-    //       column = _data[0].length - 1 - (i ~/ _data[0].length);
-    //       row = i % _data[0].length;
-    //       break;
-    //   }
+        case Dir.east:
+          col = this.cols - 1 - (i ~/this.cols);
+          row = i % this.cols;
+          break;
+      }
 
-    //   if (movables.contains(_data[row][column]) &&
-    //       inBounds(row + _dMove[dir]![1], column + _dMove[dir]![0]) &&
-    //       _data[row + _dMove[dir]![1]][column + _dMove[dir]![0]] == empty) {
-    //     _data[row + _dMove[dir]![1]][column + _dMove[dir]![0]] =
-    //         _data[row][column];
-    //     _data[row][column] = empty;
-    //     stable = false;
-    //   }
-    // }
+      int moveRow = row + _dMove[dir]![1];
+      int moveCol = col + _dMove[dir]![0];
+
+      if (!isEmpty(moveLayer, row, col) &&
+          inBounds(moveRow, moveCol) &&
+          isEmpty(moveLayer, moveRow, moveCol) &&
+          obstacleLayers.every((layer) => isEmpty(layer, moveRow, moveCol))) {
+        _layers[moveLayer][moveRow][moveCol] = _layers[moveLayer][row][col];
+        _layers[moveLayer][row][col] = _defVals[moveLayer];
+        stable = false;
+      }
+    }
+
     return stable;
   }
 
@@ -297,10 +342,10 @@ class PuzMat<T> {
         buffer.write(_layerToString(i));
       }
     } else { // ToStringMode.overlay
-      for (int row = 0; row < _layers[0].length; row++) {
+      for (int row = 0; row < this.rows; row++) {
         buffer.write('  ');
-        for (int col = 0; col < _layers[0][0].length; col++) {
-          for (int layer = _layers.length - 1; layer >= 0; layer--) {
+        for (int col = 0; col < this.cols; col++) {
+          for (int layer =this.layers - 1; layer >= 0; layer--) {
             if (_layers[layer][row][col] != _defVals[layer] || layer == 0) {
               buffer.write(_layers[layer][row][col]);
               break;
