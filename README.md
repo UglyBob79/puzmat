@@ -10,6 +10,7 @@ PuzMat is a matrix that doesn't focus solely on math operations, but more on ope
 - **Transpose:** Standard matrix transpose operations is supported.
 - **Flip:** The matrix can be flipped horizontally or vertically.
 - **Move:** Layer elements can be moved in 4 directions, with support for obstacles, which can be used for many puzzles.
+- **Mark range:** Mark the range of movement from a certain position in the matrix, with support for obstacles.
 - **String representation:** PuzMat supports several modes for toString() representation, which can be setup for each matrix. The current options are to show one or all layers, but it can also overlay the layers into a single representation.
 
 ## Getting started

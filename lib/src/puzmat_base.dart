@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:collection';
 
 enum Dir { north, south, west, east }
 
@@ -459,6 +460,124 @@ class PuzMat<T> {
     return stable;
   }
 
+  /// Marks a range of cells in the specified layer with a given marker value,
+  /// considering obstacles and optionally restricting to an exact range.
+  ///
+  /// This method performs a breadth-first search from the provided [start] position
+  /// in the specified [moveLayer]. It marks cells within a given [range] with the
+  /// specified [mark] value, while respecting obstacle layers defined in
+  /// [obstacleLayers]. The optional parameter [exact] controls whether the marking
+  /// should be exact (up to the range) or include cells beyond the range.
+  ///
+  /// Parameters:
+  /// - [start]: The starting position as a list [col, row].
+  /// - [range]: The maximum number of steps away from the start position to mark.
+  /// - [mark]: The value to mark the cells with.
+  /// - [moveLayer]: The index of the layer to be marked.
+  /// - [obstacleLayers]: List of layer indexes representing obstacle layers.
+  ///   Each obstacle layer index must be within the valid layer index range [0, this.layers).
+  /// - [exact]: If `true`, only marks cells within the exact range. If `false` (default),
+  ///   marks cells up to and including the specified range.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// var puzMat = PuzMat<int>(/*...*/);
+  /// puzMat.markMoveRange([1, 1], 2, 42, 0, [2, 3], exact: true);
+  /// ```
+  void markMoveRange(List<int> start, int range, T mark, int moveLayer, List<int> obstacleLayers, { bool exact = false }) {
+    Queue<List<dynamic>> queue = Queue<List<dynamic>>();
+
+    queue.add([start, 0]);
+
+    outer:
+    while (queue.isNotEmpty) {
+      var task = queue.removeFirst();
+      List<int> pos = task[0];
+      int steps = task[1];
+
+      if (!inBounds(pos[1], pos[0]) || steps > range) {
+        continue;
+      }
+
+      for (var obstacleLayer in obstacleLayers) {
+        if (_layers[obstacleLayer][pos[1]][pos[0]] != _defVals[obstacleLayer])  {
+          continue outer;
+        }
+      }
+
+      if (!exact || steps == range) {
+        _layers[moveLayer][pos[1]][pos[0]] = mark;
+      }
+
+      for (var dir in Dir.values) {
+        int moveRow = pos[1] + _dMove[dir]![1];
+        int moveCol = pos[0] + _dMove[dir]![0];
+
+        queue.add([[moveCol, moveRow], steps + 1]);
+      }
+    }
+  }
+
+  List<List<int>> layerFindAll(int layer, T item) {
+    List<List<int>> result = [];
+
+    for (int row = 0; row < this.rows; row++) {
+      for (int col = 0; col < this.cols; col++) {
+        if (_layers[layer][row][col] == item) {
+          result.add([col, row]);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /// Counts the occurrences of a specific item in the cells of a given layer.
+  ///
+  /// This method iterates through the cells of the specified [layer] in the PuzMat instance
+  /// and counts the occurrences of the specified [item].
+  ///
+  /// Parameters:
+  /// - [layer]: The index of the layer to be counted.
+  /// - [item]: The item whose occurrences are to be counted.
+  ///
+  /// Returns:
+  /// - The number of occurrences of the specified [item] in the cells of the specified [layer].
+  ///
+  /// Example usage:
+  /// ```dart
+  /// var puzMat = PuzMat<int>(/*...*/);
+  /// var count = puzMat.layerCount(0, 42);
+  /// ```
+  int layerCount(int layer, T item) {
+    int result = 0;
+
+    for (int row = 0; row < this.rows; row++) {
+      for (int col = 0; col < this.cols; col++) {
+        if (_layers[layer][row][col] == item) {
+          result++;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /// Sets the toString mode for the PuzMat instance, controlling how the layers are displayed in string representation.
+  ///
+  /// This method allows you to specify a custom toString mode ([mode]) for the PuzMat instance.
+  /// The optional parameter [layer] allows you to set the toString mode to a specific layer.
+  /// If [layer] is not specified or set to -1, the toString mode will be applied to all layers.
+  ///
+  /// Parameters:
+  /// - [mode]: The ToStringMode to be set for the PuzMat instance.
+  /// - [layer]: (Optional) The index of the layer for which the toString() will be applied to.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// var puzMat = PuzMat<int>(/*...*/);
+  /// puzMat.setToStringMode(ToStringMode.single, layer: 1);
+  /// ```
   void setToStringMode(ToStringMode mode, {layer = -1}) {
     _toStringMode = mode;
     _toStringLayer = layer;
