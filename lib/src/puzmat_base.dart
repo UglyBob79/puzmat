@@ -505,7 +505,7 @@ class PuzMat<T> {
         }
       }
 
-      if (!exact || steps == range) {
+      if (!exact || (range - steps) % 2 == 0) {
         _layers[moveLayer][pos[1]][pos[0]] = mark;
       }
 
