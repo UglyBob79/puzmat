@@ -1,3 +1,5 @@
+import 'dart:io';
+
 enum Dir { north, south, west, east }
 
 Map<Dir, List<int>> _dMove = {
@@ -58,6 +60,17 @@ class PuzMat<T> {
     _defVals = List.generate(_layers.length, (_) => null);
   }
 
+  PuzMat.fromFile(File file, String delimiterPattern, { T? empty }) {
+    var matrix = file
+        .readAsLinesSync()
+        .map((line) => line.split(delimiterPattern))
+        .map((row) => row.map((element) => _parseElement<T>(element)).toList())
+        .toList();
+
+    _layers.add(matrix);
+    _defVals.add(empty);
+  }
+
   /// Maps layers in a PuzMat instance based on specified mappings and data.
   ///
   /// Given a 2D matrix of data and a list of mappings for each layer, this method
@@ -71,7 +84,7 @@ class PuzMat<T> {
   ///
   /// Throws [ArgumentError] if [empty] is provided and its length is not the same as
   /// the length of mappings.
-  PuzMat.mapLayers(List<List<T>> matrix, List<List<T>> mappings, { List<T?>? empty }) {
+  PuzMat.mapLayers(List<List<T?>> matrix, List<List<T>> mappings, { List<T?>? empty }) {
     if (empty != null && empty.length != mappings.length) {
       throw ArgumentError.value(empty, 'empty', 'Parameter empty must be the same length as mappings or null.');
     }
@@ -99,6 +112,17 @@ class PuzMat<T> {
     }
   }
 
+  /// Creates a new PuzMat instance by mapping layers from an existing PuzMat instance.
+  ///
+  /// Given a source PuzMat [from] and a layer index [layer], this factory method
+  /// generates a new PuzMat instance by mapping layers based on the provided
+  /// [mappings]. Optionally, you can specify a default list [empty] for the
+  /// generated PuzMat instance. If [empty] is not provided, it defaults to an
+  /// empty list.
+  factory PuzMat.mapLayersFromLayer(PuzMat<T> from, int layer, List<List<T>> mappings, { List<T?>? empty }) {
+    return PuzMat.mapLayers(from.layer(layer), mappings, empty: empty);
+  }
+
   /// Adds a new layer to the PuzMat using a 2D matrix.
   ///
   /// This method adds a new layer to the private list _layers by copying the
@@ -109,9 +133,31 @@ class PuzMat<T> {
   ///   - [matrix]: The 2D matrix representing the new layer to be added.
   ///   - [empty]: An optional parameter representing the default value for
   ///     elements in the new layer. If not provided, the default value is `null`.
-  void addLayerFromMatrix(List<List<T>> matrix, { T? empty }) {
+  void addLayerFromMatrix(List<List<T?>> matrix, { T? empty }) {
     _layers.add(matrix);
     _defVals.add(empty);
+  }
+
+  /// Creates a new layer with a specified fill value and adds it to the PuzMat matrix.
+  ///
+  /// This method generates a 2D matrix with the specified dimensions (rows and columns),
+  /// filled with the given fill value. The generated layer is then added to the puzzle matrix.
+  ///
+  /// Parameters:
+  ///   - [fill]: The value to fill the matrix with.
+  ///   - [empty]: An optional parameter representing the default value for
+  ///     elements in the new layer. If not provided, the default value is `null`.
+  ///
+  /// Returns:
+  ///   - void
+  void newLayer(T fill, { T? empty }) {
+    List<List<T?>> matrix = List.generate(
+      rows,
+      (row) => List<T?>.filled(cols, fill, growable: false),
+      growable: false,
+    );
+
+    addLayerFromMatrix(matrix, empty: empty);
   }
 
   /// This getter provides the count of rows in the matrix.
@@ -164,6 +210,30 @@ class PuzMat<T> {
     return _layers;
   }
 
+  /// Retrieves the 2D matrix representing a specific layer.
+  ///
+  /// This method returns a 2D matrix representing the layer at the given index.
+  /// It performs a validity check on the layer index to ensure it falls within
+  /// the valid range of layer indices. If the layer index is invalid, a [RangeError]
+  /// is thrown. Otherwise, the 2D matrix corresponding to the specified layer is
+  /// returned.
+  ///
+  /// Parameters:
+  ///   - [layer]: The index of the layer to retrieve.
+  ///
+  /// Returns:
+  ///   - A 2D matrix representing the specified layer.
+  ///
+  /// Throws:
+  ///   - [RangeError]: If the layer index is out of bounds.
+  List<List<T?>> layer(int layer) {
+    if (!layerValid(layer)) {
+      throw RangeError("Invalid layer index");
+    }
+
+    return _layers[layer];
+  }
+
   /// The transpose of a matrix swaps its rows and columns.
   ///
   /// Returns a new PuzMat representing the transpose of the current matrix.
@@ -192,6 +262,21 @@ class PuzMat<T> {
         _layers.map((layer) => layer.reversed.toList()).toList());
   }
 
+  /// Accesses the 2D matrix representing a specific layer using the square bracket notation.
+  ///
+  /// This operator allows you to retrieve the 2D matrix corresponding to the layer at
+  /// the given index using the square bracket (`[]`) notation. The layer index is used
+  /// to access the desired layer within the matrix. If the layer index is invalid, a
+  /// [RangeError] is thrown.
+  ///
+  /// Parameters:
+  ///   - [layer]: The index of the layer to retrieve.
+  ///
+  /// Returns:
+  ///   - A 2D matrix representing the specified layer.
+  ///
+  /// Throws:
+  ///   - [RangeError]: If the layer index is out of bounds.
   List<List<T?>> operator [](int layer) {
     return _layers[layer];
   }
@@ -204,31 +289,31 @@ class PuzMat<T> {
     //_data[index] = value;
   }
 
-/// Checks if a specific element in the PuzMat instance is empty.
-///
-/// This method verifies whether the element at the specified layer, row, and
-/// column is considered empty, based on the comparison with the default value
-/// (_defVals) associated with that layer. If the provided layer, row, or column
-/// is out of range, a [RangeError] is thrown.
-///
-/// Example:
-/// ```dart
-/// final puzMat = PuzMat<int>();
-/// // ... (populate layers)
-/// if (puzMat.isEmpty(1, 2, 3)) {
-///   print('The element at layer 1, row 2, and column 3 is empty.');
-/// }
-/// ```
-///
-/// Parameters:
-/// - [layer]: The index of the layer to check.
-/// - [row]: The index of the row to check.
-/// - [col]: The index of the column to check.
-///
-/// Returns `true` if the element is empty; otherwise, returns `false`.
-///
-/// Throws a [RangeError] if the provided layer index is out of range or if the
-/// specified row or column is not inside the matrix range.
+  /// Checks if a specific element in the PuzMat instance is empty.
+  ///
+  /// This method verifies whether the element at the specified layer, row, and
+  /// column is considered empty, based on the comparison with the default value
+  /// (_defVals) associated with that layer. If the provided layer, row, or column
+  /// is out of range, a [RangeError] is thrown.
+  ///
+  /// Example:
+  /// ```dart
+  /// final puzMat = PuzMat<int>();
+  /// // ... (populate layers)
+  /// if (puzMat.isEmpty(1, 2, 3)) {
+  ///   print('The element at layer 1, row 2, and column 3 is empty.');
+  /// }
+  /// ```
+  ///
+  /// Parameters:
+  /// - [layer]: The index of the layer to check.
+  /// - [row]: The index of the row to check.
+  /// - [col]: The index of the column to check.
+  ///
+  /// Returns `true` if the element is empty; otherwise, returns `false`.
+  ///
+  /// Throws a [RangeError] if the provided layer index is out of range or if the
+  /// specified row or column is not inside the matrix range.
   bool isEmpty(int layer, int row, int col) {
     if (!inBounds(row, col)) {
       throw RangeError("Row or col not inside matrix range.");
@@ -294,6 +379,33 @@ class PuzMat<T> {
     }
   }
 
+  /// Moves elements in the specified layer [moveLayer] in the given direction [dir],
+  /// subject to obstacle layers and boundary conditions.
+  ///
+  /// This method attempts to move elements in the specified layer according to the
+  /// provided [dir] (direction) while respecting obstacles defined in [obstacleLayers].
+  /// The method returns `true` if the move operation results in a stable state, and
+  /// `false` otherwise.
+  ///
+  /// Parameters:
+  /// - [dir]: The direction of the move operation (north, south, west, or east).
+  /// - [moveLayer]: The index of the layer to be moved. Must be within the valid
+  ///   layer index range [0, this.layers).
+  /// - [obstacleLayers]: List of layer indexes representing obstacle layers.
+  ///   Each obstacle layer index must be within the valid layer index range [0, this.layers).
+  ///
+  /// Throws:
+  /// - [RangeError]: If the [moveLayer] or any obstacle layer index is outside
+  ///   the valid layer index range.
+  ///
+  /// Returns:
+  /// - `true` if the move operation results in a stable state, and `false` otherwise.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// var puzMat = PuzMat<int>(/*...*/);
+  /// var movedStably = puzMat.move(Dir.north, 1, [2, 3]);
+  /// ```
   bool move(Dir dir, int moveLayer, List<int> obstacleLayers) {
     if (moveLayer < 0 || moveLayer >= this.layers) {
       throw RangeError("Invalid move layer index");
@@ -432,5 +544,17 @@ class PuzMat<T> {
 
     return List.generate(
         rows, (row) => List<T>.generate(cols, (col) => defVal));
+  }
+
+  T _parseElement<T>(String element) {
+    if (T == int) {
+      return int.parse(element) as T;
+    } else if (T == double) {
+      return double.parse(element) as T;
+    } else if (T == String) {
+      return element as T;
+    } else {
+      throw ArgumentError("Unsupported type: $T");
+    }
   }
 }

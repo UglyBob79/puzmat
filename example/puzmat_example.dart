@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:puzmat/puzmat.dart';
 
 void main() {
@@ -164,4 +166,26 @@ void main() {
   // #....###..
   // #.OO.#....
 
+  var fileMat = PuzMat<String>.fromFile(File('example/example.dat'), '');
+
+  print(fileMat);
+
+  // PuzMat[11][11]
+  // layer: 0
+  //   ...........
+  //   .....###.#.
+  //   .###.##..#.
+  //   ..#.#...#..
+  //   ....#.#....
+  //   .##..S####.
+  //   .##..#...#.
+  //   .......##..
+  //   .##.#.####.
+  //   .##..##.##.
+  //   ...........
+
+  strMat = PuzMat.mapLayersFromLayer(fileMat, 0, [['.'], ['#'], ['S']], empty: empty);
+
+  print(strMat.layers);
+  print(strMat);
 }
