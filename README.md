@@ -115,8 +115,7 @@ Example code:
     ['O']
   ];
 
-  /// This list sets the empty value, or default value, for each layer. For some operations, cells
-  /// with that value will be considered empty
+  // This list sets the empty value, or default value, for each layer. For some operations, cells with that value will be considered empty
 
   List<String?> empty = ['.', ' ', ' '];
 
@@ -146,23 +145,22 @@ Example code:
   //           #
   //     #    # #
   //        #
-  //
+
   //   #    ###
   //   #    #
   // layer: 2
   //   O
   //   O OO
-  //
+
   //   OO  O    O
   //    O     O
   //   O    O
   //     O   O  O
   //          O
-  //
+
   //    OO
 
-  /// Enable overlay toString() mode, this will merge all layers into one. Empty values will show
-  ///the layer below
+  /// Enable overlay toString() mode, this will merge all layers into one. Empty values can show the layer below
 
   strMat.setToStringMode(ToStringMode.overlay);
 
@@ -180,8 +178,7 @@ Example code:
   //   #....###..
   //   #OO..#....
 
-  /// Move all non-empty elements of layer 2 in to the east, layer 1 will be considered obstacles.
-  /// Returns true if no movement could be made.
+  /// Move all non-empty elements of layer 2 in to the east, layer 1 will be considered obstacles. Returns true if no movement could be made.
 
   bool stable = strMat.move(Dir.east, 2, [1]);
 
@@ -202,4 +199,156 @@ Example code:
   // ........O.
   // #....###..
   // #.OO.#....
+
+  var fileMat = PuzMat<String>.fromFile(File('example/example.dat'), '');
+
+  print(fileMat);
+
+  // PuzMat[11][11]
+  // layer: 0
+  //   ...........
+  //   .....###.#.
+  //   .###.##..#.
+  //   ..#.#...#..
+  //   ....#.#....
+  //   .##..S####.
+  //   .##..#...#.
+  //   .......##..
+  //   .##.#.####.
+  //   .##..##.##.
+  //   ...........
+
+  strMat = PuzMat.mapLayersFromLayer(fileMat, 0, [['.'], ['#'], ['S']], empty: empty);
+
+  print(strMat);
+
+  // PuzMat[11][11]
+  // layer: 0
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  // layer: 1
+  //
+  //        ### #
+  //    ### ##  #
+  //     # #   #
+  //       # #
+  //    ##   ####
+  //    ##  #   #
+  //          ##
+  //    ## # ####
+  //    ##  ## ##
+
+  // layer: 2
+  //
+  //
+  //
+  //
+  //
+  //        S
+  //
+  //
+  //
+  //
+  //
+
+  var found = strMat.layerFindAll(2, 'S');
+
+  print(found);
+
+  // [[5, 5]]
+
+  strMat.clearLayer(2);
+
+  print(strMat);
+
+  // PuzMat[11][11]
+  // layer: 0
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  //   ...........
+  // layer: 1
+  //
+  //        ### #
+  //    ### ##  #
+  //     # #   #
+  //       # #
+  //    ##   ####
+  //    ##  #   #
+  //          ##
+  //    ## # ####
+  //    ##  ## ##
+
+  // layer: 2
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+
+  strMat.setToStringMode(ToStringMode.overlay);
+
+  strMat.markMoveRange(found[0], 6, 'O', 2, [1]);
+
+  print(strMat);
+
+  // PuzMat[11][11]
+  //   ...........
+  //   .....###.#.
+  //   .###.##OO#.
+  //   .O#O#OOO#..
+  //   OOOO#O#OO..
+  //   .##OOO####.
+  //   .##OO#O..#.
+  //   .OOOOOO##..
+  //   .##O#O####.
+  //   .##O.##.##.
+  //   ...........
+
+  strMat.clearLayer(2);
+
+  strMat.markMoveRange(found[0], 6, 'O', 2, [1], exact: true);
+
+  print(strMat);
+
+  // PuzMat[11][11]
+  //   ...........
+  //   .....###.#.
+  //   .###.##.O#.
+  //   .O#O#O.O#..
+  //   O.O.#.#.O..
+  //   .##O.O####.
+  //   .##.O#O..#.
+  //   .O.O.O.##..
+  //   .##.#.####.
+  //   .##O.##.##.
+  //   ...........
+
+  int count = strMat.layerCount(2, 'O');
+
+  print(count);
+
+  // 16
 ```
