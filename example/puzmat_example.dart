@@ -317,4 +317,10 @@ void main() {
   print(count);
 
   // 16
+
+  strMat.clearLayer(2);
+  strMat.repeatMatrix(3, 3);
+
+  print(strMat);
+
 }

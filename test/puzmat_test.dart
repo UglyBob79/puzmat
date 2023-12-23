@@ -257,4 +257,24 @@ void main() {
       expect(puzMat[1][5], [' ', ' ', '#', ' ', ' ', ' ', ' ', '#', ' ', '#']);
       expect(puzMat[2][6], [' ', ' ', 'O', ' ', ' ', ' ', 'O', ' ', ' ', 'O']);
   });
+
+  test('Empty directions', () {
+    List<List<String>> map = [
+      ".O........",
+      "O.O..O....",
+      ".O....O...",
+      "O.....O...",
+      "O......O.."]
+      .map((l) => l.split('')).toList();
+
+    var puzMat = PuzMat.mapLayers(map, [['.'], ['O']], empty: ['.', ' ']);
+    puzMat.setToStringMode(ToStringMode.overlay);
+    print(puzMat);
+
+    expect(puzMat.empty4Dirs(1, [1, 1]).length, 0);
+    expect(puzMat.empty4Dirs(1, [5, 2]), unorderedEquals([Dir.south, Dir.west]));
+    expect(puzMat.empty4Dirs(1, [1, 4]), unorderedEquals([Dir.north, Dir.east]));
+    expect(puzMat.empty4Dirs(1, [6, 4]), unorderedEquals([Dir.west]));
+    expect(puzMat.empty4Dirs(1, [5, 1]), unorderedEquals(Dir.values));
+  });
 }

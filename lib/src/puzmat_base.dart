@@ -563,6 +563,89 @@ class PuzMat<T> {
     return result;
   }
 
+
+  /// This method repeats the matrix by duplicating rows and columns.
+  ///
+  /// The [rowRepeats] parameter specifies the number of times the entire set
+  /// of rows should be repeated, and [colRepeats] specifies the number of times
+  /// the entire set of columns should be repeated.
+  ///
+  /// The method modifies the matrix in-place by updating the layers with the
+  /// repeated rows and columns.
+  void repeatMatrix(int rowRepeats, int colRepeats) {
+    for (int row = 0; row < this.rows; row++) {
+      for (var layer in _layers) {
+        List<T?> repeatedList = List<T?>.empty(growable: true);
+
+        Iterable.generate(colRepeats, (index) => layer[row]).forEach((list) {
+          repeatedList.addAll(list);
+        });
+
+        layer[row] = repeatedList;
+      }
+    }
+
+    int nRows = this.rows;
+
+    for (int i = 0; i < rowRepeats - 1; i++) {
+      for (int row = 0; row < nRows; row++) {
+        for (var layer in _layers) {
+          layer.add(layer[row]);
+        }
+      }
+    }
+  }
+
+  /// Generates a list of valid directions for movement from a given position
+  /// within a specified layer.
+  ///
+  /// The method checks for valid directions by examining the neighboring positions
+  /// in the specified layer. It returns a list of valid [Dir] values representing
+  /// directions in which movement is possible without going out of bounds or
+  /// encountering non-empty positions.
+  ///
+  /// Parameters:
+  /// - [layer]: The layer in which the movement is being considered.
+  /// - [pos]: A list representing the current position as [column, row].
+  ///
+  /// Returns:
+  /// A list of valid [Dir] values representing allowable movement directions.
+  List<Dir> empty4Dirs(int layer, List<int> pos) {
+    List<Dir> result = [];
+    for (Dir dir in Dir.values) {
+      var move = [pos[0] + _dMove[dir]![0], pos[1] + _dMove[dir]![1]];
+      if (inBounds(move[1], move[0]) && isEmpty(layer, move[1], move[0])) {
+        result.add(dir);
+      }
+    }
+    return result;
+  }
+
+  /// Generates a list of valid positions for movement from a given position
+  /// within a specified layer.
+  ///
+  /// The method checks for valid positions by examining the neighboring positions
+  /// in the specified layer. It returns a list of valid positions represented as
+  /// lists of [column, row] pairs, where movement is possible without going out
+  /// of bounds or encountering non-empty positions.
+  ///
+  /// Parameters:
+  /// - [layer]: The layer in which the movement is being considered.
+  /// - [pos]: A list representing the current position as [column, row].
+  ///
+  /// Returns:
+  /// A list of lists representing valid positions for movement.
+  List<List<int>> empty4Positions(int layer, List<int> pos) {
+    List<List<int>> result = [];
+    for (Dir dir in Dir.values) {
+      var move = [pos[0] + _dMove[dir]![0], pos[1] + _dMove[dir]![1]];
+      if (inBounds(move[1], move[0]) && isEmpty(layer, move[1], move[0])) {
+        result.add(move);
+      }
+    }
+    return result;
+  }
+
   /// Sets the toString mode for the PuzMat instance, controlling how the layers are displayed in string representation.
   ///
   /// This method allows you to specify a custom toString mode ([mode]) for the PuzMat instance.
