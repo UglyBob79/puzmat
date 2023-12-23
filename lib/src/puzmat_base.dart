@@ -590,7 +590,7 @@ class PuzMat<T> {
     for (int i = 0; i < rowRepeats - 1; i++) {
       for (int row = 0; row < nRows; row++) {
         for (var layer in _layers) {
-          layer.add(layer[row]);
+          layer.add(layer[row].toList());
         }
       }
     }
