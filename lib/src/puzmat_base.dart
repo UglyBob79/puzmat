@@ -605,16 +605,16 @@ class PuzMat<T> {
   /// encountering non-empty positions.
   ///
   /// Parameters:
-  /// - [layer]: The layer in which the movement is being considered.
+  /// - [layers]: The list of layers in which the movement is being considered.
   /// - [pos]: A list representing the current position as [column, row].
   ///
   /// Returns:
   /// A list of valid [Dir] values representing allowable movement directions.
-  List<Dir> empty4Dirs(int layer, List<int> pos) {
+  List<Dir> empty4Dirs(List<int> layers, List<int> pos) {
     List<Dir> result = [];
     for (Dir dir in Dir.values) {
       var move = [pos[0] + _dMove[dir]![0], pos[1] + _dMove[dir]![1]];
-      if (inBounds(move[1], move[0]) && isEmpty(layer, move[1], move[0])) {
+      if (inBounds(move[1], move[0]) && layers.every((layer) => isEmpty(layer, move[1], move[0]))) {
         result.add(dir);
       }
     }
@@ -630,16 +630,16 @@ class PuzMat<T> {
   /// of bounds or encountering non-empty positions.
   ///
   /// Parameters:
-  /// - [layer]: The layer in which the movement is being considered.
+  /// - [layers]: The list of layers in which the movement is being considered.
   /// - [pos]: A list representing the current position as [column, row].
   ///
   /// Returns:
   /// A list of lists representing valid positions for movement.
-  List<List<int>> empty4Positions(int layer, List<int> pos) {
+  List<List<int>> empty4Positions(List<int> layers, List<int> pos) {
     List<List<int>> result = [];
     for (Dir dir in Dir.values) {
       var move = [pos[0] + _dMove[dir]![0], pos[1] + _dMove[dir]![1]];
-      if (inBounds(move[1], move[0]) && isEmpty(layer, move[1], move[0])) {
+      if (inBounds(move[1], move[0]) && layers.every((layer) => isEmpty(layer, move[1], move[0]))) {
         result.add(move);
       }
     }
