@@ -182,6 +182,13 @@ class PuzMat<T> {
     return _layers.length;
   }
 
+  /// This getter provides the size of the matrix.
+  ///
+  /// Returns a list with the number of layers, rows and columns
+  List<int> get size {
+    return [_layers.length, rows, cols];
+  }
+
   /// If the [row] is within the current bounds of the matrix, a list of elements in that row is returned.
   ///
   /// Returns a list representing the elements in the specified [row] of the matrix base layer.
